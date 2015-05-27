@@ -1,0 +1,17 @@
+;; -*- mode: lfe -*-
+
+(terminals |(| |)| ! ? STRING)
+
+(non-terminals session facts fact question)
+
+(root-symbol session)
+
+(rule session (facts question) 0)
+(rule session (|(| session |)| session) 1)
+
+(rule facts (fact facts) 2)
+(rule facts ($empty) 3)
+
+(rule fact (! STRING) 4)
+
+(rule question (? STRING) 5)

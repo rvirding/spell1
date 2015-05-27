@@ -1,0 +1,21 @@
+%% -*- mode: erlang -*-
+
+Terminals
+
+'(' ')' '!' '?' STRING .
+
+Nonterminals
+
+session facts fact question .
+
+Rootsymbol session .
+
+session -> facts question : 0 .
+session -> '(' session ')' session : 1 .
+
+facts -> fact facts : 2 .
+facts -> '$empty' : 3 .
+
+fact -> '!' STRING : 4 .
+
+question -> '?' STRING : 5 .

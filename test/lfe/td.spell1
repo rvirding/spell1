@@ -1,0 +1,23 @@
+;; -*- mode: lfe -*-
+
+(terminals |(| |)| / => + - id)
+
+(non-terminals E T Q R F)
+
+(root-symbol E)
+
+(rule E (T Q) (tuple 0 $1 $2))
+
+(rule T (F R) (tuple 1 $1 $2))
+
+(rule Q (+ T Q) (tuple 2 + $2 $3))
+(rule Q (- T Q) 3)
+(rule Q ($empty) 4)
+
+(rule R (=> F R) 5)
+(rule R (/ F T) 6)
+(rule R ($empty) 7)
+
+(rule F (|(| E |)|) (tuple 8 $1 $2 $3))
+(rule F (id) (tuple 9 $1))
+

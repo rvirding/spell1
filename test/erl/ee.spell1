@@ -1,0 +1,24 @@
+%% -*- mode: erlang -*-
+
+Terminals
+
+'(' ')' '+' '*' id .
+
+Nonterminals
+
+E Ep T Tp F .
+
+Rootsymbol E .
+
+E -> T Ep : 0 .
+
+Ep -> '+' T Ep : 1 .
+Ep -> '$empty' : 2 .
+
+T -> F Tp : 3 .
+
+Tp -> '*' F Tp : 4 .
+Tp -> '$empty' : 5 .
+
+F -> '(' E ')' : 6 .
+F -> id : 7 .

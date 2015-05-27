@@ -1,0 +1,20 @@
+;; -*- mode: lfe -*-
+
+(terminals |(| |)| + * id)
+
+(non-terminals E Ep T Tp F)
+
+(root-symbol E)
+
+(rule E (T Ep) 0)
+
+(rule Ep (+ T Ep)  1)
+(rule Ep ($empty)  2)
+
+(rule T (F Tp) 3)
+
+(rule Tp (* F Tp) 4)
+(rule Tp ($empty) 5)
+
+(rule F (|(| E |)|) 6)
+(rule F (id) 7)
