@@ -61,7 +61,7 @@
        res))))
 
 (defun internal (file opts)
-  (let* ((st0 (make-spell1 gram (spell1_core:init_grammar)
+  (let* ((st0 (make-spell1 gram (spell1_core:init_grammar opts)
                            opts opts))
          (st1 (filenames file st0)))
     (case (do-passes (passes) st1)
@@ -79,7 +79,7 @@
          (base (filename:basename file ".spell1"))
          (gfile (filename:join dir (++ base ".spell1")))
          (lfile (++ base ".lfe"))
-	 (ifile (includefile (spell1-opts st)))
+         (ifile (includefile (spell1-opts st)))
          (module (list_to_atom base)))
     (set-spell1 st
                 base base

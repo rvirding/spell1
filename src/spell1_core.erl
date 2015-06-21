@@ -18,7 +18,7 @@
 
 -module(spell1_core).
 
--export([init_grammar/0,format_error/1,
+-export([init_grammar/1,format_error/1,
          add_root/2,add_terminals/2,add_non_terminals/2,add_rule/5,
          get_root/1,
          make_grammar/1,
@@ -38,6 +38,7 @@
                 rc,
                 ptab,
                 table,
+                opts=[],
                 errors=[],
                 warnings=[]
                }).
@@ -76,14 +77,15 @@ format_error(undefined_root) -> "undefined root symbol";
 format_error(bad_declaration) -> "unknown or bad declaration";
 format_error(bad_rule) -> "bad rule".
 
-init_grammar() ->
+init_grammar(Opts) ->
     #state{root=[],
            term=[?EPSILON],
            nonterm=[],
            rtab=ets:new(rtab, [protected,{keypos,#rule.n}]),
            rc=0,
            ptab=ets:new(ptab, [protected,{keypos,#prod.name}]),
-           table=ets:new(table, [protected,bag,{keypos,#prod.name}])}.
+           table=ets:new(table, [protected,bag,{keypos,#prod.name}]),
+           opts=Opts}.
 
 %% add_root(RootName, State) -> State.
 %% add_terminals(Terminals, State) -> State.

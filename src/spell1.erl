@@ -68,7 +68,7 @@ file(File, Opts) ->
     end.
 
 internal(File, Opts) ->
-    St0 = #spell1{gram=spell1_core:init_grammar(),
+    St0 = #spell1{gram=spell1_core:init_grammar(Opts),
                   opts=Opts},
     St1 = filenames(File, St0),
     case do_passes(passes(), St1) of
