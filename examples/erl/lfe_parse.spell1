@@ -104,8 +104,8 @@ make_fun(FunStr) ->
 
 make_bin(Line, Segs) ->
     case catch lfe_eval:expr([binary|Segs]) of
-	Bin when is_bitstring(Bin) -> Bin;
-	_ -> return_error(Line, "bad binary")
+        Bin when is_bitstring(Bin) -> Bin;
+        _ -> return_error(Line, "bad binary")
     end.
 
 %% make_map(Line, Elements) -> Map.
@@ -113,8 +113,8 @@ make_bin(Line, Segs) ->
 
 make_map(Line, Es) ->
     case catch maps:from_list(pair_list(Es)) of
-	Map when is_map(Map) -> Map;
-	_ -> return_error(Line, "bad map")
+        Map when is_map(Map) -> Map;
+        _ -> return_error(Line, "bad map")
     end.
 
 %% pair_list(List) -> [{A,B}].
