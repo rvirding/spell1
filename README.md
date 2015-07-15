@@ -10,9 +10,38 @@ processed in the file `spell1_core.erl` and the IO-files for Erlang
 and LFE are inte `spell1.erl` and `lspell1.lfe`. It is easy to add
 IO-files for other languages.
 
+## Using the generated parser
+
+The parser which spell1 generates contains by default two exported
+functions. They have the same name as the root symbol (see below) and
+are the default entry into the parser. They have the type:
+
+    <root symbol>(Tokens) -> Return.
+    <root symbol>(Continuation, Tokens) -> Return.
+    
+        Types:
+        
+            Tokens = [Token]
+            Continuation = [] | continuation()
+            Token = {Type,LINE} | {Type,LINE,Value}
+            Return = {ok,Form,RestTokens} | {more,Continuation} |
+                     {error,Error,RestTokens}
+
+In a token: `Type` is one of the terminals; `LINE` is some form of metadata
+about the token usually containing the line number; and `Value` gives
+a specific value for that terminal, for example the actual number or
+atom.
+
+The functions returns return any remaining tokens which weren't used
+in the form, these can then be used to parse the next form. When the
+functions return `{more,Continuation}` they don't have enough tokens
+to parse a form and the function can be called again with the
+continuation and more tokens to continue parsing. This can be repeated
+until enough tokens have been received and the form is parsed.
+
 ## Grammar definition files
 
-The grammar definitions are in files with the defualt extension
+The grammar definitions are in files with the default extension
 `.spell1`. A grammar file must: list all the terminal and non-terminal
 symbols; indicate the root symbol; give all the grammar rules; and
 give any extra code. The default function for parsing has the same
