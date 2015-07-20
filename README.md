@@ -74,37 +74,39 @@ LFE version.
 
 ```erlang
 Terminals
-    symbol number string fun '(' ')' '[' ']' '.' '\'' ',' ',@' '`' '#('
-    '#B(' '#M(' '#\''.
+    symbol number string binary fun '(' ')' '[' ']' '.' '\'' '`' ',' ',@'
+    '#(' '#B(' '#M(' '#\''.
 
 Nonterminals form sexpr list list_tail proper_list .
 
 Rootsymbol form.
 
-form -> sexpr : '$1'.                                   % 0
-sexpr -> symbol : value('$1').                          % 1
-sexpr -> number : value('$1').                          % 2
-sexpr -> string : value('$1').                          % 3
-sexpr -> '#\'' : make_fun(value('$1')).                 % 4
-sexpr -> '\'' sexpr : [quote,'$2'].                     % 5
-sexpr -> '`' sexpr : [backquote,'$2'].                  % 6
-sexpr -> ',' sexpr : [comma,'$2'].                      % 7
-sexpr -> ',@' sexpr : ['comma-at','$2'].                % 8
-sexpr -> '(' list ')' : '$2'.                           % 9
-sexpr -> '[' list ']' : '$2'.                           %10
-sexpr -> '#(' proper_list ')' : list_to_tuple('$2').    %11
-sexpr -> '#B(' proper_list ')' :                        %12
+form -> sexpr : '$1'.
+sexpr -> symbol : value('$1').
+sexpr -> number : value('$1').
+sexpr -> string : value('$1').
+sexpr -> binary : value('$1').
+sexpr -> '#\'' : make_fun(value('$1')).
+sexpr -> '\'' sexpr : [quote,'$2'].
+sexpr -> '`' sexpr : [backquote,'$2'].
+sexpr -> ',' sexpr : [comma,'$2'].
+sexpr -> ',@' sexpr : ['comma-at','$2'].
+sexpr -> '(' list ')' : '$2'.
+sexpr -> '[' list ']' : '$2'.
+sexpr -> '#(' proper_list ')' : list_to_tuple('$2').
+sexpr -> '#B(' proper_list ')' :
         make_bin(line('$1'), '$2').
-sexpr -> '#M(' proper_list ')' :                        %13
+sexpr -> '#M(' proper_list ')' :
         make_map(line('$1'), '$2').
-list -> sexpr list_tail : ['$1'|'$2'].                  %14
-list -> '$empty' : [].                                  %15
-list_tail -> sexpr list_tail : ['$1'|'$2'].             %16
-list_tail -> '.' sexpr : '$2'.                          %17
-list_tail -> '$empty' : [].                             %18
-proper_list -> sexpr proper_list : ['$1'|'$2'].         %19
-proper_list -> '$empty' : [].                           %20
+list -> sexpr list_tail : ['$1'|'$2'].
+list -> '$empty' : [].
+list_tail -> sexpr list_tail : ['$1'|'$2'].
+list_tail -> '.' sexpr : '$2'.
+list_tail -> '$empty' : [].
+proper_list -> sexpr proper_list : ['$1'|'$2'].
+proper_list -> '$empty' : [].
 
+%% Extra Erlang code.
 Erlang code.
 
 %% For backwards compatibility
@@ -162,39 +164,42 @@ pair_list([]) -> [].
 ### LFE
 
 ```lisp
-(terminals symbol number string fun |(| |)| |[| |]| |.| |'| |`| |,| |,@|
+(terminals symbol number string binary fun |(| |)| |[| |]| |.| |'| |`| |,| |,@|
            |#(| |#B(| |#M(| |#'| )
 
 (non-terminals form sexpr list list-tail proper-list )
 
 (root-symbol form)
 
-(rule form (sexpr) $1)                                  ;0
-(rule sexpr (symbol) (value $1))                        ;1
-(rule sexpr (number) (value $1))                        ;2
-(rule sexpr (string) (value $1))                        ;3
-(rule sexpr (|#'|) (make-fun (value $1)))               ;4
-(rule sexpr (|'| sexpr) `(quote ,$2))                   ;5
-(rule sexpr (|`| sexpr) `(backquote ,$2))               ;6
-(rule sexpr (|,| sexpr) `(comma ,$2))                   ;7
-(rule sexpr (|,@| sexpr) `(comma-at ,$2))               ;8
-(rule sexpr (|(| list |)|) $2)                          ;9
-(rule sexpr (|[| list |]|) $2)                          ;10
-(rule sexpr (|#(| proper-list |)|) (list_to_tuple $2))  ;11
-(rule sexpr (|#B(| proper-list |)|)                     ;12
+(rule form (sexpr) $1)
+(rule sexpr (symbol) (value $1))
+(rule sexpr (number) (value $1))
+(rule sexpr (string) (value $1))
+(rule sexpr (binary) (value $1))
+(rule sexpr (|#'|) (make-fun (value $1)))
+(rule sexpr (|'| sexpr) `(quote ,$2))
+(rule sexpr (|`| sexpr) `(backquote ,$2))
+(rule sexpr (|,| sexpr) `(comma ,$2))
+(rule sexpr (|,@| sexpr) `(comma-at ,$2))
+(rule sexpr (|(| list |)|) $2)
+(rule sexpr (|[| list |]|) $2)
+(rule sexpr (|#(| proper-list |)|) (list_to_tuple $2))
+(rule sexpr (|#B(| proper-list |)|)
       (make-bin (line $1) $2))
-(rule sexpr (|#M(| proper-list |)|)                     ;13
+(rule sexpr (|#M(| proper-list |)|)
       (make-map (line $1) $2))
-(rule list (sexpr list-tail) (cons $1 $2))              ;14
-(rule list ($empty) ())                                 ;15
-(rule list-tail (sexpr list-tail) (cons $1 $2))         ;16
-(rule list-tail (|.| sexpr) $2)                         ;17
-(rule list-tail ($empty) ())                            ;18
-(rule proper-list (sexpr proper-list) (cons $1 $2))     ;19
-(rule proper-list ($empty) ())                          ;20
+(rule list (sexpr list-tail) (cons $1 $2))
+(rule list ($empty) ())
+(rule list-tail (sexpr list-tail) (cons $1 $2))
+(rule list-tail (|.| sexpr) $2)
+(rule list-tail ($empty) ())
+(rule proper-list (sexpr proper-list) (cons $1 $2))
+(rule proper-list ($empty) ())
 
+;; Extra LFE code.
 lfe-code
 
+;; For backwards compatibility
 (extend-module (export (sexpr 1) (sexpr 2)))
 
 (defun sexpr (ts) (form ts))
