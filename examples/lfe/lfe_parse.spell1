@@ -14,7 +14,7 @@
 ;; limitations under the License.
 
 (terminals symbol number string binary fun |(| |)| |[| |]| |.| |'| |`| |,| |,@|
-           |#(| |#B(| |#M(| |#'| )
+           |#(| |#B(| |#M(| |#'| |#.|)
 
 (non-terminals form sexpr list list-tail proper-list )
 
@@ -26,6 +26,7 @@
 (rule sexpr (string) (value $1))
 (rule sexpr (binary) (value $1))
 (rule sexpr (|#'|) (make-fun (value $1)))
+(rule sexpr (|#.| sexpr) (eval-expr (line $1) $2))
 (rule sexpr (|'| sexpr) `(quote ,$2))
 (rule sexpr (|`| sexpr) `(backquote ,$2))
 (rule sexpr (|,| sexpr) `(comma ,$2))
@@ -47,6 +48,10 @@
 
 ;; Extra LFE code.
 lfe-code
+
+(defmacro CATCH (expr error)
+  `(try ,expr
+     (catch (`#(,_ ,_ ,_) ,error))))
 
 ;; For backwards compatibility
 (extend-module (export (sexpr 1) (sexpr 2)))
@@ -75,17 +80,15 @@ lfe-code
 ;;  Make a binary from the segments.
 
 (defun make-bin (line segs)
-  (case (catch (lfe_eval:expr (cons 'binary segs)))
-    (bin (when (is_bitstring bin)) bin)
-    (_ (return_error line "bad binary"))))
+  (CATCH (lfe_eval:expr (cons 'binary segs))
+         (return_error line "bad binary")))
 
 ;; make-map(Line, Elements) -> Map.
 ;;  Make a map from the key/value elements.
 
 (defun make-map (line es)
-  (case (catch (maps:from_list (pair-list es)))
-    (map (when (is_map map)) map)
-    (_ (return_error line "bad map"))))
+  (CATCH (maps:from_list (pair-list es))
+         (return_error line "bad map")))
 
 ;; pair_list(List) -> [{A,B}].
 ;;  Generate a list of tuple pairs from the elements. An error if odd
@@ -94,3 +97,10 @@ lfe-code
 (defun pair-list
   ([`(,a ,b . ,l)] `(#(,a ,b) . ,(pair-list l)))
   ([()] ()))
+
+;; eval-expr(Line, Expr) -> Val.
+;;  Evaluate #. expression.
+
+(defun eval-expr (line expr)
+  (CATCH (lfe_eval:expr expr)
+         (return_error line "bad #. expression")))

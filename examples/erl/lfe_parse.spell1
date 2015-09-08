@@ -17,7 +17,7 @@
 
 Terminals
     symbol number string binary fun '(' ')' '[' ']' '.' '\'' '`' ',' ',@'
-    '#(' '#B(' '#M(' '#\''.
+    '#(' '#B(' '#M(' '#.' '#\''.
 
 Nonterminals form sexpr list list_tail proper_list .
 
@@ -29,6 +29,7 @@ sexpr -> number : value('$1').
 sexpr -> string : value('$1').
 sexpr -> binary : value('$1').
 sexpr -> '#\'' : make_fun(value('$1')).
+sexpr -> '#.' sexpr : eval_expr(line('$1'), '$2').
 sexpr -> '\'' sexpr : [quote,'$2'].
 sexpr -> '`' sexpr : [backquote,'$2'].
 sexpr -> ',' sexpr : [comma,'$2'].
@@ -50,6 +51,8 @@ proper_list -> '$empty' : [].
 
 %% Extra Erlang code.
 Erlang code.
+
+-define(CATCH(E, Error), try E catch _:_ -> Error end).
 
 %% For backwards compatibility
 -export([sexpr/1,sexpr/2]).
@@ -81,19 +84,15 @@ make_fun(FunStr) ->
 %%  Make a binary from the segments.
 
 make_bin(Line, Segs) ->
-    case catch lfe_eval:expr([binary|Segs]) of
-        Bin when is_bitstring(Bin) -> Bin;
-        _ -> return_error(Line, "bad binary")
-    end.
+    ?CATCH(lfe_eval:expr([binary|Segs]),
+           return_error(Line, "bad binary")).
 
 %% make_map(Line, Elements) -> Map.
 %%  Make a map from the key/value elements.
 
 make_map(Line, Es) ->
-    case catch maps:from_list(pair_list(Es)) of
-        Map when is_map(Map) -> Map;
-        _ -> return_error(Line, "bad map")
-    end.
+    ?CATCH(maps:from_list(pair_list(Es)),
+           return_error(Line, "bad map")).
 
 %% pair_list(List) -> [{A,B}].
 %%  Generate a list of tuple pairs from the elements. An error if odd
@@ -101,3 +100,10 @@ make_map(Line, Es) ->
 
 pair_list([A,B|L]) -> [{A,B}|pair_list(L)];
 pair_list([]) -> [].
+
+%% eval_expr(Line, Expr) -> Val.
+%%  Evaluate #. expression.
+
+eval_expr(Line, Expr) ->
+    ?CATCH(lfe_eval:expr(Expr),
+           return_error(Line, "bad #. expression")).

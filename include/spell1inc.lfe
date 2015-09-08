@@ -35,7 +35,8 @@
     (try
         (parse2 ts st0 vs0)
       (case
-          (`#(done ,rest () (,v)) `#(ok ,l ,v ,rest))
+          (`#(done ,rest () (,v))
+           `#(ok ,l ,v ,rest))
           (`#(more () ,st1 ,vs1)
            `#(more ,(make-spell1 line l st st1 vs vs1)))
           (`#(error ,line ,error ,rest ,_ ,_)
@@ -101,6 +102,10 @@
    (if (io_lib:deep_char_list message)
      message
      (lfe_io:print1 message))))
+
+;; return_error(Error).
+;;  To be used in grammar files to throw an error message to the
+;;  parser toplevel. Doesn't have to be exported!
 
 (defun return_error (line message)
   (throw `#(spell1-error #(,line ,(MODULE) ,message))))
