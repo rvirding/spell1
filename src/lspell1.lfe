@@ -241,11 +241,11 @@
     ((tuple 'error e) (add-error e st))
     (line
      (case line
-       (`(,@"##module" . ,_) (output-module out st))
-       (`(,@"##code" . ,_) (output-user-code out st))
-       (`(,@"##entry" . ,_) (output-entry out st))
-       (`(,@"##table" . ,_) (output-table out st))
-       (`(,@"##reduce" . ,_) (output-reduce out st))
+       ((++* "##module" _) (output-module out st))
+       ((++* "##code" _) (output-user-code out st))
+       ((++* "##entry" _) (output-entry out st))
+       ((++* "##table" _) (output-table out st))
+       ((++* "##reduce" _) (output-reduce out st))
        (_ (io:put_chars out line)))
      (output-file inc out st (+ l 1)))))
 
