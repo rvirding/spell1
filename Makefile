@@ -1,5 +1,5 @@
 # Makefile for spell1
-# This simple Makefile uses rebar (in Unix) or rebar.cmd (in Windows)
+# This simple Makefile uses rebar3 (in Unix) or rebar3.cmd (in Windows)
 # to compile/clean if it exists, else does it explicitly.
 
 EBINDIR = ebin
@@ -28,30 +28,30 @@ $(EBINDIR)/%.beam: $(SRCDIR)/%.lfe
 
 all: compile docs
 
-.PHONY: compile erlc_compile install docs clean
+.PHONY: compile erlc-compile install docs clean
 
-## Compile using rebar if it exists else using make
+## Compile using rebar3 if it exists else using make
 compile:
-	if which rebar.cmd > /dev/null; \
-	then rebar.cmd compile; \
-	elif which rebar > /dev/null; \
-	then rebar compile; \
-	else $(MAKE) $(MFLAGS) erlc_compile; \
+	if which rebar3.cmd > /dev/null; \
+	then rebar3.cmd compile; \
+	elif which rebar3 > /dev/null; \
+	then rebar3 compile; \
+	else $(MAKE) $(MFLAGS) erlc-compile; \
 	fi
 
 ## Compile using erlc
-erlc_compile: $(addprefix $(EBINDIR)/, $(EBINS)) $(addprefix $(BINDIR)/, $(BINS))
+erlc-compile: $(addprefix $(EBINDIR)/, $(EBINS)) $(addprefix $(BINDIR)/, $(BINS))
 
 docs:
 
 clean:
-	if which rebar.cmd > /dev/null; \
-	then rebar.cmd clean; \
-	elif which rebar > /dev/null; \
-	then rebar clean; \
+	if which rebar3.cmd > /dev/null; \
+	then rebar3.cmd clean; \
+	elif which rebar3 > /dev/null; \
+	then rebar3 clean; \
 	else rm -rf $(EBINDIR)/*.beam; \
 	fi
-	rm maps.mk
+	rm -rf maps.mk
 	rm -rf erl_crash.dump
 
 echo:
