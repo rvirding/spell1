@@ -40,8 +40,9 @@
           (`#(more () ,st1 ,vs1)
            `#(more ,(make-spell1 line l st st1 vs vs1)))
           (`#(error ,line ,error ,rest ,_ ,_)
-           ;; Can't really continue from errors here.
-           `(error #(,line ,(MODULE) ,error) ,rest)))
+           ;; Can't really continue from errors here. Give line
+           ;; number of start of uncompleted form.
+           `(error #(,l ,(MODULE) ,error) ,rest)))
       (catch
         (`#(throw #(spell1-error ,error) ,_)    ;User error
          `#(error ,error ()))))))
@@ -67,14 +68,14 @@
   ([(= (cons t ts) ts0) (= (cons s st) st0) vs]
    ;; Try to match token type against state on stack.
    (let ((tt (type t)))
-     (if (=:= tt s)
+     (if (=:= tt s)                     ;Match
        (parse2 ts st (cons t vs))
-       (case (table s tt)
+       (case (table s tt)               ;Try to predict
          ('error `#(error ,(line t) #(illegal ,tt) ,ts0 ,st0 ,vs))
          (top (parse2 ts0 (++ top st) vs))))))
-  ([() st vs]
+  ([() st vs]                           ;Need more tokens
    (tuple 'more () st vs))
-  ([(= ts `#(eof ,l)) st vs]
+  ([(= ts `#(eof ,l)) st vs]            ;No more tokens
    `#(error ,l missing_token ,ts ,st ,vs)))
 
 ;; Access the fields of a token.
