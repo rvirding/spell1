@@ -2,7 +2,7 @@
 
 {application,spell1,
  [{description,"LL(1) parser generator"},
-  {vsn,"0.1"},
+  {vsn,"0.2"},
   {modules,[]},
   {registered,[]},
   {application,[kernel,stdlib]}]}.
