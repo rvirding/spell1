@@ -235,9 +235,19 @@ parse_grammar(F, Line, St0) ->
             {ok,St0}
     end.
 
+-ifdef(OTP_RELEASE).
+-if(?OTP_RELEASE >= 24).
+-define(SCAN_RESULT(Ts, Next), {ok, _, Ts, Next}).
+-else.
+-define(SCAN_RESULT(Ts, Next), {ok, Ts, Next}).
+-endif.
+-else.
+-define(SCAN_RESULT(Ts, Next), {ok, Ts, Next}).
+-endif.
+
 read_grammar(F, Line, _St) ->
     case yeccscan:scan(F, '', Line) of
-        {ok,Ts,Next} ->
+        ?SCAN_RESULT(Ts,Next) ->
             case yeccparser:parse(Ts) of
                 {ok,{rule,Rule,{erlang_code,Ets}}} ->
                         {ok,{rule,Rule,Ets},Next};
