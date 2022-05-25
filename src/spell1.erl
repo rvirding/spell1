@@ -43,6 +43,21 @@
 -define(DEFAULT_OPTS, [report,verbose]).
 -define(INCLUDE_FILE, "spell1inc.hrl").
 
+-ifdef(OTP_RELEASE).
+-if(?OTP_RELEASE >= 23).
+-define(CATCH_CLAUSE(Class,Reason,Stack),
+        Class:Reason:Stack ->).
+-else.
+-define(CATCH_CLAUSE(Class,Reason,Stack),
+        Class:Reason ->
+           Stack = erlang:get_stacktrace(),).
+-endif.
+-else.
+-define(CATCH_CLAUSE(Class,Reason,Stack),
+        Class:Reason ->
+           Stack = erlang:get_stacktrace(),).
+-endif.
+
 %% Errors and warnings.
 format_error(bad_declaration) -> "unknown or bad declaration".
 
@@ -56,8 +71,8 @@ file(File, Opts) ->
                    Ret = try
                              internal(File, Opts)
                          catch
-                             error:Reason ->
-                                 St = erlang:get_stacktrace(),
+                             %% Note: macro adds ->
+                             ?CATCH_CLAUSE(error, Reason, St)
                                  {error,{Reason,St}}
                          end,
                    exit(Ret)
