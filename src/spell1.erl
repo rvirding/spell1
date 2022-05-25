@@ -338,7 +338,7 @@ output_export(Out, #spell1{gram=G}) ->
 output_user_code(_, #spell1{erlang_code=none}) -> ok;
 output_user_code(Out, #spell1{gfile=Gfile,erlang_code=Eline}) ->
     {ok,In} = file:open(Gfile, [read]),
-    skip_lines(In, Eline),
+    skip_lines(In, erl_anno:line(Eline)),
     %% output_file_directive(Out, Gfile, Eline),
     output_lines(In, Out),
     file:close(In).
@@ -427,7 +427,7 @@ pp_tokens(Tokens, Line) ->
     ["begin"," ",pp_tokens(Tokens, Line, none)," ","end"].
     
 pp_tokens([T | Ts], Line0, Prev) ->
-    {line, Line} = erl_scan:token_info(T, line),
+    Line = erl_scan:line(T),
     [pp_sep(Line, Line0, Prev, T),pp_symbol(T)|pp_tokens(Ts, Line, T)];
 pp_tokens([], _, _) -> [].
 
