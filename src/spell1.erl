@@ -43,6 +43,21 @@
 -define(DEFAULT_OPTS, [report,verbose]).
 -define(INCLUDE_FILE, "spell1inc.hrl").
 
+-ifdef(OTP_RELEASE).
+-if(?OTP_RELEASE >= 23).
+-define(CATCH_CLAUSE(Class,Reason,Stack),
+        Class:Reason:Stack ->).
+-else.
+-define(CATCH_CLAUSE(Class,Reason,Stack),
+        Class:Reason ->
+           Stack = erlang:get_stacktrace(),).
+-endif.
+-else.
+-define(CATCH_CLAUSE(Class,Reason,Stack),
+        Class:Reason ->
+           Stack = erlang:get_stacktrace(),).
+-endif.
+
 %% Errors and warnings.
 format_error(bad_declaration) -> "unknown or bad declaration".
 
@@ -56,8 +71,8 @@ file(File, Opts) ->
                    Ret = try
                              internal(File, Opts)
                          catch
-                             error:Reason ->
-                                 St = erlang:get_stacktrace(),
+                             %% Note: macro adds ->
+                             ?CATCH_CLAUSE(error, Reason, St)
                                  {error,{Reason,St}}
                          end,
                    exit(Ret)
@@ -220,9 +235,19 @@ parse_grammar(F, Line, St0) ->
             {ok,St0}
     end.
 
+-ifdef(OTP_RELEASE).
+-if(?OTP_RELEASE >= 24).
+-define(SCAN_RESULT(Ts, Next), {ok, _, Ts, Next}).
+-else.
+-define(SCAN_RESULT(Ts, Next), {ok, Ts, Next}).
+-endif.
+-else.
+-define(SCAN_RESULT(Ts, Next), {ok, Ts, Next}).
+-endif.
+
 read_grammar(F, Line, _St) ->
     case yeccscan:scan(F, '', Line) of
-        {ok,Ts,Next} ->
+        ?SCAN_RESULT(Ts,Next) ->
             case yeccparser:parse(Ts) of
                 {ok,{rule,Rule,{erlang_code,Ets}}} ->
                         {ok,{rule,Rule,Ets},Next};
@@ -313,7 +338,7 @@ output_export(Out, #spell1{gram=G}) ->
 output_user_code(_, #spell1{erlang_code=none}) -> ok;
 output_user_code(Out, #spell1{gfile=Gfile,erlang_code=Eline}) ->
     {ok,In} = file:open(Gfile, [read]),
-    skip_lines(In, Eline),
+    skip_lines(In, erl_anno:line(Eline)),
     %% output_file_directive(Out, Gfile, Eline),
     output_lines(In, Out),
     file:close(In).
@@ -402,7 +427,7 @@ pp_tokens(Tokens, Line) ->
     ["begin"," ",pp_tokens(Tokens, Line, none)," ","end"].
     
 pp_tokens([T | Ts], Line0, Prev) ->
-    {line, Line} = erl_scan:token_info(T, line),
+    Line = erl_scan:line(T),
     [pp_sep(Line, Line0, Prev, T),pp_symbol(T)|pp_tokens(Ts, Line, T)];
 pp_tokens([], _, _) -> [].
 
