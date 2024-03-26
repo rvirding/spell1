@@ -1,7 +1,7 @@
 %% -*- mode:erlang -*-
 
 {application,spell1,
- [{description,"LL(1) parser generator"},
+ [{description,"An LL(1) parser generator for Erlang and LFE"},
   {vsn,"0.2.0"},
   {modules,[]},
   {registered,[]},

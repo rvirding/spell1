@@ -1,5 +1,6 @@
 # spell1
-LL(1) parser generator for Erlang and LFE
+
+*An LL(1) parser generator for Erlang and LFE*
 
 This is a basic LL(1) parser generator for use together with
 Erlang. There are two interfaces for different languages, Erlang and
