@@ -41,7 +41,7 @@
 -record(symbol, {line=none,name}).              %Yecc parser symbols
 
 -define(DEFAULT_OPTS, [report,verbose]).
--define(INCLUDE_FILE, "spell1inc.hrl").
+-define(INCLUDE_FILE, "include/spell1inc.hrl").
 
 %% Errors and warnings.
 format_error(bad_declaration) -> "unknown or bad declaration".
@@ -58,6 +58,7 @@ file(File, Opts) ->
                          catch
                              error:Reason ->
                                  St = erlang:get_stacktrace(),
+                                 io:format("ERROR: ~p (file/2)~n", [Reason]),
                                  {error,{Reason,St}}
                          end,
                    exit(Ret)
@@ -68,12 +69,18 @@ file(File, Opts) ->
     end.
 
 internal(File, Opts) ->
+    io:format("DEBUG: ~p (opts: ~p)~n", [File, Opts]),
     St0 = #spell1{gram=spell1_core:init_grammar(Opts),
                   opts=Opts},
     St1 = filenames(File, St0),
-    case do_passes(passes(), St1) of
+    io:format("DEBUG: state: ~p~n", [St1]),
+    Ps = passes(),
+    io:format("DEBUG: passes: ~p~n", [Ps]),
+    case do_passes(Ps, St1) of
         {ok,St2} -> do_ok_return(St2);
-        {error,St2} -> do_error_return(St2)
+        {error,St2} -> 
+            io:format("ERROR (state: ~p)~n", [St2]),
+            do_error_return(St2)
     end.
 
 %% filenames(File, State) -> State.
@@ -107,8 +114,12 @@ find_opt(_, [], Def) -> Def.
     
 do_passes([{do,Fun}|Ps], St0) ->
     case Fun(St0) of
-        {ok,St1} -> do_passes(Ps, St1);
-        {error,St1} -> {error,St1}
+        {ok,St1} ->
+            io:format("DEBUG: doing pass ~p~n", [Fun]),
+            do_passes(Ps, St1);
+        {error,St1} ->
+            io:format("ERROR (state: ~p)~n", [St1]),
+            {error,St1}
     end;
 do_passes([], St) -> {ok,St}.                   %Got to the end, everything ok
 
@@ -127,12 +138,14 @@ do_ok_return(#spell1{gfile=Gfile,gram=G,opts=Opts,warnings=Ws}) ->
         false -> ok
     end.
 
-do_error_return(#spell1{gfile=Gfile,opts=Opts,errors=Es,warnings=Ws}) ->
+do_error_return(#spell1{gfile=Gfile,opts=Opts,errors=Es,warnings=Ws}=St) ->
     when_opt(report, Opts, fun () -> list_errors(Gfile, Es) end),
     when_opt(report, Opts, fun () -> list_warnings(Gfile, Ws) end),
     %% Fix the right return.
     case lists:member(return, Opts) of
-        true -> {error,return_errors(Gfile, Es),return_errors(Gfile, Ws)};
+        true ->
+            io:format("ERRORS: ~p (state: ~p)~n", [Es, St]),
+            {error,return_errors(Gfile, Es),return_errors(Gfile, Ws)};
         false -> error
     end.
 
@@ -171,11 +184,11 @@ when_opt(Opt, Opts, Fun) ->
 
 %% add_error(Line, E, St) -> add_error(Line, ?MODULE, E, St).
 
-add_error(Line, Mod, E, St) ->
-    add_error({Line,Mod,E}, St).
+add_error(Line, Mod, Fun, E, St) ->
+    add_error({Line,Mod,E}, Fun, St).
 
-add_error(Error, St) ->
-    St#spell1{errors=St#spell1.errors ++ [Error]}.
+add_error(Error, Fun, St) ->
+    St#spell1{errors=St#spell1.errors ++ [?MODULE, Fun, Error]}.
 
 add_warning(Line, W, St) -> add_warning(Line, ?MODULE, W, St).
 
@@ -201,7 +214,8 @@ parse_grammar(St) ->
             file:close(F),
             Ret;
         {error,E} ->
-            {error,add_error(none, file, E, St)}
+            io:format("ERROR: ~p (state: ~p)~n", [E, St]),
+            {error,add_error(none, file, 'parse_grammar/1', E, St)}
     end.
 
 parse_grammar(F, Line, St0) ->
@@ -215,12 +229,13 @@ parse_grammar(F, Line, St0) ->
                     parse_grammar(F, NextLine, St1)
             end;
         {error,Error,_} ->
-            {error,add_error(Error, St0)};
+            io:format("ERROR: ~p (state: ~p)~n", [Error, St0]),
+            {error,add_error(Error, 'parse_grammar/3', St0)};
         {eof,_} ->
             {ok,St0}
     end.
 
-read_grammar(F, Line, _St) ->
+read_grammar(F, Line, St) ->
     case yeccscan:scan(F, '', Line) of
         {ok,Ts,Next} ->
             case yeccparser:parse(Ts) of
@@ -228,11 +243,13 @@ read_grammar(F, Line, _St) ->
                         {ok,{rule,Rule,Ets},Next};
                 {ok,R} -> {ok,R,Next};
                 {error,E} ->
+                    io:format("ERROR: ~p (state: ~p)~n", [E, St]),
                     {error,{Line,yeccparser,E},Next}
             end;
         {eof,Next} ->
             {eof,Next};
         {error,E,Next} ->
+            io:format("ERROR: ~p (state: ~p)~n", [E, St]),
             {error,E,Next}
     end.
 
@@ -266,6 +283,7 @@ make_grammar(#spell1{gram=G0,errors=Es,warnings=Ws}=St) ->
         {ok,G1,Gws} ->
             {ok,St#spell1{gram=G1,warnings=Ws ++ Gws}};
         {error,Ges,Gws} ->
+            io:format("ERRORS: ~p (state: ~p)~n", [Es, St]),
             {error,St#spell1{errors=Es ++ Ges,warnings=Ws ++ Gws}}
     end.
 
@@ -276,20 +294,25 @@ line(T) -> element(2, T).
 %% output_file(State) -> {ok,State} | {error,State}.
 
 output_file(#spell1{efile=Efile,ifile=Ifile}=St0) ->
+    io:format("DEBUG: opening Ifile ~p~n", [Ifile]),
     {ok,Inc} = file:open(Ifile, [read]),
+    io:format("DEBUG: opening Efile ~p~n", [Efile]),
     {ok,Out} = file:open(Efile, [write]),
     St1 = output_file(Inc, Out, St0, 1),
     file:close(Inc),
     file:close(Out),
     case St1#spell1.errors of
         [] -> {ok,St1};
-        _ -> {error,St1}
+        E ->
+            io:format("ERROR: ~p (state: ~p)~n", [E, St1]),
+            {error,St1}
     end.
 
 output_file(Inc, Out, St, L) ->
+    io:format("DEBUG: writing to output file process: ~p~n", [Out]),
     case io:get_line(Inc, spell1) of
         eof -> St;
-        {error,E} -> add_error(E, St);
+        {error,E} -> add_error(E, 'output_file/4', St);
         Line ->
             case Line of
                 "##module" ++ _ -> output_module(Out, St);
@@ -353,8 +376,11 @@ output_table(Out, #spell1{gram=G}) ->
     io:put_chars(Out, "table(_, _) -> error.\n").
 
 output_reduce(Out, #spell1{gram=G}) ->
+    io:format("DEBUG: doing output reduce row ...~n"),
     Rfun = fun (N, SymLen, Toks) -> output_reduce_row(Out, N, SymLen, Toks) end,
+    io:format("DEBUG: doing spell1 (core) output reduce ...~n"),
     spell1_core:output_reduce(Rfun, G),
+    io:format("DEBUG: putting reduce chars to output ...~n"),
     io:put_chars(Out, "reduce(_, _) -> error(function_clause).\n").
 
 %% output_reduce_row(Out, N, Symlen, Tokens) -> ok.
@@ -402,7 +428,7 @@ pp_tokens(Tokens, Line) ->
     ["begin"," ",pp_tokens(Tokens, Line, none)," ","end"].
     
 pp_tokens([T | Ts], Line0, Prev) ->
-    {line, Line} = erl_scan:token_info(T, line),
+    Line = erl_scan:line(T),
     [pp_sep(Line, Line0, Prev, T),pp_symbol(T)|pp_tokens(Ts, Line, T)];
 pp_tokens([], _, _) -> [].
 

@@ -425,7 +425,13 @@ output_table_cell(Rfun, #cell{nonterm=Nt,term=T,stack=Stack,n=N}, _) ->
 %%  Traverse the rule table calling RowFun for each row of the table.
 
 output_reduce(Rfun, #state{rtab=Rtab}=St) ->
+    io:format("DEBUG (spell1_core): doing output reduce row ...~n"),
     Fun = fun (R) -> output_reduce_row(Rfun, R, St) end,
+    io:format("DEBUG (spell1_core): getting ETS table list ...~n"),
+    ets:tab2list(Rtab),
+    io:format("DEBUG (spell1_core): sorting table list ...~n"),
+    lists:keysort(#rule.n, ets:tab2list(Rtab)),
+    io:format("DEBUG (spell1_core): running reduce fun on sorted list ...~n"),
     lists:foreach(Fun, lists:keysort(#rule.n, ets:tab2list(Rtab))).
 
 output_reduce_row(Rfun, #rule{n=N,syms=[?EPSILON|_],toks=Toks}, _) ->

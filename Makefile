@@ -54,7 +54,7 @@ clean:
 	rm -rf maps.mk
 	rm -rf erl_crash.dump
 
-echo:
+info:
 	@ echo $(ESRCS)
 	@ echo $(LSRCS)
 	@ echo $(EBINS)

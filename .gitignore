@@ -9,3 +9,12 @@ rel/example_project
 .concrete/DEV_MODE
 .rebar
 /ebin
+/_build
+*~
+\#*\#
+.\#*
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+*.crashdump
+test/*/generated/
