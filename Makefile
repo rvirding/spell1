@@ -28,7 +28,7 @@ $(EBINDIR)/%.beam: $(SRCDIR)/%.lfe
 
 all: compile docs
 
-.PHONY: compile erlc-compile install docs clean
+.PHONY: compile erlc-compile install docs clean test
 
 ## Compile using rebar3 if it exists else using make
 compile:
@@ -53,8 +53,12 @@ clean:
 	fi
 	rm -rf maps.mk
 	rm -rf erl_crash.dump
+	rm -rf test/*/generated
 
 info:
 	@ echo $(ESRCS)
 	@ echo $(LSRCS)
 	@ echo $(EBINS)
+
+test: clean
+	@DEBUG=1 rebar3 as test_erl do compile,eunit

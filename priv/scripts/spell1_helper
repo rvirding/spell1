@@ -1,0 +1,12 @@
+#!/bin/sh
+
+export LANG=$1
+
+erl \
+-pa $(rebar3 as test_${LANG} path) _build/test_${LANG}/lib/spell1/test/${LANG} \
+_build/test_${LANG}/lib/spell1/test/shared \
+-noshell \
+-run spell1_helper generate_${LANG}_files \
+-s init stop
+
+#rebar3 as test_${LANG} compile

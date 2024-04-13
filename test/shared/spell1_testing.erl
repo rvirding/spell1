@@ -2,8 +2,6 @@
 
 -export([setup/0,
          teardown/0]).
--export([generate_erl_files/0,
-         generate_lfe_files/0]).
 
 -include_lib("eunit/include/eunit.hrl").
 
