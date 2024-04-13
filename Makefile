@@ -62,3 +62,4 @@ info:
 
 test: clean
 	@DEBUG=1 rebar3 as test_erl do compile,eunit
+	@DEBUG=1 rebar3 as test_lfe do compile,eunit

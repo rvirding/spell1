@@ -6,11 +6,12 @@
 %%% TESTS
 %%%=============================================================================
 
-lfe_test_() ->
+erlang_test_() ->
     {foreach, spell1_testing:setup(), spell1_testing:teardown(),
      [
-      fun run_group/0
+      ?_assert(lfe:form([{string,1,"lfe"}]) == {ok,1,"lfe",[]}),
+      ?_assert(lfe:form([{number,1,42}]) == {ok,1,42,[]})
      ]}.
+    
 
-run_group() ->
-    ok.
+

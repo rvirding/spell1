@@ -47,6 +47,7 @@
 (defun file (file) (file file (DEFAULT-OPTS)))
 
 (defun file (file opts)
+  (io:format "DEBUG LFE: calling 'file' with args ~p, ~p ...~n" (list file opts)) 
   (let* ((ifun (lambda ()
                  (let ((ret (try
                                 (internal file opts)
@@ -61,6 +62,7 @@
        res))))
 
 (defun internal (file opts)
+  (io:format "DEBUG LFE: calling 'internal' with args ~p, ~p ...~n" (list file opts)) 
   (let* ((st0 (make-spell1 gram (spell1_core:init_grammar opts)
                            opts opts))
          (st1 (filenames file st0)))
@@ -73,6 +75,7 @@
 ;;  explicit one has been given in the options.
 
 (defun filenames (file st)
+  (io:format "DEBUG LFE: calling 'filenames' with args ~p, ~p ...~n" (list file st)) 
   ;; Test for explicit outdir.
   (let* ((odir (outdir (spell1-opts st)))
          (dir (filename:dirname file))
