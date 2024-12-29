@@ -1,4 +1,5 @@
-%% Copyright (c) 2009-2015 Robert Virding
+%% -*- mode: erlang; indent-tabs-mode: nil -*-
+%% Copyright (c) 2009-2024 Robert Virding
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -19,6 +20,8 @@
 -module(spell1).
 
 -export([file/1,file/2,format_error/1]).
+
+-include("spell1.hrl").
 
 %% -compile(export_all).
 
@@ -56,9 +59,8 @@ file(File, Opts) ->
                    Ret = try
                              internal(File, Opts)
                          catch
-                             error:Reason ->
-                                 St = erlang:get_stacktrace(),
-                                 {error,{Reason,St}}
+                             ?CATCH(error, Reason, Stack)
+                                 {error,{Reason,Stack}}
                          end,
                    exit(Ret)
            end,
@@ -220,6 +222,33 @@ parse_grammar(F, Line, St0) ->
             {ok,St0}
     end.
 
+%% read_grammar(File, Line, State) -> {ok
+
+-ifdef('NEW_YECC').
+read_grammar(F, Line, St) ->
+    %% case yeccscan:scan(Inport, '', Location) of
+    case yeccscan:scan(F, '', Line) of
+        {eof, NextLocation} ->
+            {eof, NextLocation};
+        {error, E, NextLocation} ->
+            {error, E, NextLocation};
+        {error, terminated} ->
+            throw(St);
+        {error, _} ->
+            File = St#spell1.gfile,
+            throw(add_error(File, none, cannot_parse, St));
+        {ok, _AllInput, Input, NextLocation} ->
+            %% NextLine = erl_anno:line(NextLocation),
+            case yeccparser:parse(Input) of
+                {error, {_ErrorLocation, _Mod, _Message}=E} ->
+                    {error,E,NextLocation};
+                {ok, {rule, Rule, {erlang_code, Tokens}}} ->
+                    {ok,{rule,Rule,Tokens},NextLocation};
+                {ok, Ss} ->
+                    {ok,Ss,NextLocation}
+            end
+    end.
+-else.
 read_grammar(F, Line, _St) ->
     case yeccscan:scan(F, '', Line) of
         {ok,Ts,Next} ->
@@ -235,6 +264,7 @@ read_grammar(F, Line, _St) ->
         {error,E,Next} ->
             {error,E,Next}
     end.
+-endif.
 
 %% extract_grammar(State) -> {ok,State} | {error,State}.
 %%  Extract the relevant forms from the grammar file. For unknown
@@ -313,7 +343,7 @@ output_export(Out, #spell1{gram=G}) ->
 output_user_code(_, #spell1{erlang_code=none}) -> ok;
 output_user_code(Out, #spell1{gfile=Gfile,erlang_code=Eline}) ->
     {ok,In} = file:open(Gfile, [read]),
-    skip_lines(In, Eline),
+    skip_lines(In, erl_anno:line(Eline)),
     %% output_file_directive(Out, Gfile, Eline),
     output_lines(In, Out),
     file:close(In).
@@ -402,7 +432,7 @@ pp_tokens(Tokens, Line) ->
     ["begin"," ",pp_tokens(Tokens, Line, none)," ","end"].
     
 pp_tokens([T | Ts], Line0, Prev) ->
-    {line, Line} = erl_scan:token_info(T, line),
+    Line = erl_scan:line(T),
     [pp_sep(Line, Line0, Prev, T),pp_symbol(T)|pp_tokens(Ts, Line, T)];
 pp_tokens([], _, _) -> [].
 

@@ -1,4 +1,4 @@
-;; Copyright (c) 2009-2015 Robert Virding
+;; Copyright (c) 2009-2024 Robert Virding
 ;;
 ;; Licensed under the Apache License, Version 2.0 (the "License");
 ;; you may not use this file except in compliance with the License.
@@ -51,9 +51,8 @@
                  (let ((ret (try
                                 (internal file opts)
                               (catch
-                                ((tuple 'error reason _)
-                                 (let ((st (erlang:get_stacktrace)))
-                                   `#(error #(,reason ,st))))))))
+                                ((tuple 'error reason st)
+                                 `#(error #(,reason ,st)))))))
                    (exit ret))))
          ((tuple pid ref) (spawn_monitor ifun)))
     (receive
@@ -241,11 +240,11 @@
     ((tuple 'error e) (add-error e st))
     (line
      (case line
-       ((++* "##module" _) (output-module out st))
-       ((++* "##code" _) (output-user-code out st))
-       ((++* "##entry" _) (output-entry out st))
-       ((++* "##table" _) (output-table out st))
-       ((++* "##reduce" _) (output-reduce out st))
+       ((++ "##module" _) (output-module out st))
+       ((++ "##code" _) (output-user-code out st))
+       ((++ "##entry" _) (output-entry out st))
+       ((++ "##table" _) (output-table out st))
+       ((++ "##reduce" _) (output-reduce out st))
        (_ (io:put_chars out line)))
      (output-file inc out st (+ l 1)))))
 
